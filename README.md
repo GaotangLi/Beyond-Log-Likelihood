@@ -89,62 +89,6 @@ python data/download_data.py
 
 ---
 
-<!-- ## 🚀 Training
-
-Training scripts are provided in [`scripts/training/`](scripts/training/). Each dataset has exemplar `.sh` files for quick use. In addition, we provide a **one-shot script** that automatically generates and runs the training command.
-
-### One-Shot Training & Evaluation
-
-To run training and evaluation in one step, use:
-
-```bash
-python scripts/one_click/script_generator.py \
-    --dataset $DATASET \
-    --model_save_name $MODEL_KEY \
-    --trainer_objective_trans $OBJECTIVE \
-    (--run_script)
-```
-
-where `$Dataset` specifies the dataset of use, which can be chosen from `[math, medical, figfont]`. `$model_save_name` specifies the model to be used, 
-which can be chosen from the key of the following dictionary mappings:
-
-```python
-MODEL_MAPPING = {
-    "qwen-2.5-math-1.5b": "Qwen/Qwen2.5-Math-1.5B",
-    "qwen-2.5-math-7b": "Qwen/Qwen2.5-Math-7B",
-    "qwen-2.5-1.5b": "Qwen/Qwen2.5-1.5B",
-    "qwen-2.5-7b": "Qwen/Qwen2.5-7B",
-    "llama-3.1-8b": "meta-llama/Llama-3.1-8B",
-    "llama-3.2-3b": "meta-llama/Llama-3.2-3B",
-    "deepseek-math-7b": "deepseek-ai/deepseek-math-7b-base",
-}
-```
-
-
-
-The argument `--run_script` is a boolean argument that will directly run the code if specified. You may also specify the number of GPUs to be used by specifying `$nproc_per_node`. You can specify the specific GPU device by entering `--cuda_visible_devices $YOUR_DEVICES`. The **most important** argument is the objective, currently supported by the following keys in the dicitonary with explanations as values:
-
-```python
-{
-  "original": "Original implementation of SFT",
-  "GeneralFamily-alpha": "The function $(1-p^{\alpha})/\alpha$ where \alpha needs to be specified. A greater positive \alpha means the objective is more prior-leaning; and vice versa for prior-averse",
-  "p": "1-p",
-  "OnlyTopP-q": "The thresholded function (1-p) * 1[p >= q] (q to be specified)",
-  "OnlyBottomP-q": "The thresholded function (1-p) * 1[p <= q] (q to be specified)",
-  "OnlyTopLogP-q": "The thresholded funtion -log(p) * 1[p >= q] (q to be specified)", 
-  "OnlyBottomLogP-q": "The thresholded function -log(p) * 1[p <= q] (q to be specified)" 
-}
-```
-
-
-Specific examples (for each dataset) include the following:
-
-```bash
-python scripts/one_click/script_generator.py --dataset medical --model_save_name qwen-2.5-math-1.5b --trainer_objective_trans GeneralFamily-8 --run_script
-python scripts/one_click/script_generator.py --dataset medical --model_save_name qwen-2.5-1.5b --trainer_objective_trans original --run_script
-python scripts/one_click/script_generator.py --dataset figfont --model_save_name qwen-2.5-7b --trainer_objective_trans original --run_script
-``` -->
-
 ## 🚀 Training
 
 Training scripts are provided in [`scripts/training/`](scripts/training/). Each dataset has exemplar `.sh` files for quick use. In addition, we provide a **one-shot script** that automatically generates and runs the training command.
@@ -179,7 +123,7 @@ MODEL_MAPPING = {
 }
 ```
 
-- **`--trainer_objective_trans`**: The most important argument. Specifies the training objective from the following options:
+- **`--trainer_objective_trans`**: The most important argument. Specifies the training objective from the following options (more to be added):
 
 | Key | Description |
 |-----|-------------|
@@ -227,14 +171,16 @@ python scripts/one_click/script_generator.py \
 
 ## 📊 Evaluation 
 
-The evaluation scripts are provided in [`scripts/evaluation/`](scripts/evaluation/).
+The evaluation scripts are provided in [`scripts/evaluation/`](scripts/evaluation/). You may use the one-shot training & evaluation script for best convenience. Our evaluation logs all output runs for transparent comparisons.
 
 
 ---
 
 ## 📑 Datasets
 
-The dataset processing and downloading code are provided in [`data/`](data/).
+Dataset processing and downloading code are in [`data/`](data/). You may generate custom splits using similar preprocessing stages. Feel free to add new datasets via pull request following the logic in [`scripts/script_generator.py`](scripts/generator.py). Our paper uses the following datasets for training: [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [m23k](https://huggingface.co/datasets/UCSC-VLAA/m23k-tokenized), and [reasoning-gym](https://github.com/open-thought/reasoning-gym). We are extremely grateful for these open-source contributions.
+
+
 
 ---
 
@@ -248,7 +194,6 @@ The implementation of this repository is built upon [veRL](https://github.com/vo
 ## 📚 Citation
 
 If you find this repository useful, please cite:
-
 
 ```bibtex
 @misc{li2025beyond,
