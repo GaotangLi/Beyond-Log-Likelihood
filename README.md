@@ -200,9 +200,9 @@ MODEL_MAPPING = {
 #### Usage Examples
 
 ```bash
-# Medical dataset with Qwen2.5-Math-1.5B using GeneralFamily objective (alpha=8)
+# Math dataset with Qwen2.5-Math-1.5B using GeneralFamily objective (alpha=8)
 python scripts/one_click/script_generator.py \
-    --dataset medical \
+    --dataset math \
     --model_save_name qwen-2.5-math-1.5b \
     --trainer_objective_trans GeneralFamily-8 \
     --run_script
