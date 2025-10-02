@@ -73,7 +73,7 @@ Beyond-Log-Likelihood/
 
 ## ⚙️ Installation 
 
-The installation requirements are minimal. The main dependencies are:
+The installation requirements are minimal. (You may use your own environments for running the code.) The main dependencies are:
 
 ```bash
 verl(==0.4.0.dev0)
@@ -82,11 +82,20 @@ vllm
 flash_attn
 ```
 
+Before training, run the following code to download all necessary data:
+
+```bash
+python data/download_data.py
+```
+
+
 ---
 
 ## 🚀 Training
 
-The training scrips are provided in [`scripts/training`](`scripts/training`).  
+The training scripts are provided in [`scripts/training/`](scripts/training/).
+
+
 
 <!-- Available objectives include. -->
 <!-- The key argument to modify is `model.partial_pretrain` and `trainer.objective_trans`. -->
@@ -95,7 +104,7 @@ The training scrips are provided in [`scripts/training`](`scripts/training`).
 
 ## 📊 Evaluation 
 
-The evaluation scripts are provided in [`scripts/evaluation`](`scripts/evaluation`).
+The evaluation scripts are provided in [`scripts/evaluation/`](scripts/evaluation/).
 
 <!-- TODO: More explanations -->
 
@@ -104,7 +113,7 @@ The evaluation scripts are provided in [`scripts/evaluation`](`scripts/evaluatio
 
 ## 📑 Datasets
 
-The dataset processing and downloading code are provided in [`data`](`data/`).
+The dataset processing and downloading code are provided in [`data/`](data/).
 
 ---
 

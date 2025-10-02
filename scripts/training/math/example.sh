@@ -5,7 +5,7 @@ bz=256
 max_length=3072
 micro_batch_size=4
 
-experiment_name=qwen-2.5-math-7b-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-micro_batch_size-$micro_batch_size-alpha-10
+experiment_name=qwen-2.5-math-1.5b-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-micro_batch_size-$micro_batch_size-alpha-10
 save_path=./checkpoints/math/$experiment_name
 
 torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
@@ -20,7 +20,7 @@ torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
     data.prompt_dict_keys=['question'] \
     data.response_dict_keys=['answer'] \
     data.micro_batch_size_per_gpu=$micro_batch_size \
-    model.partial_pretrain=Qwen/Qwen2.5-Math-7B \
+    model.partial_pretrain=Qwen/Qwen2.5-Math-1.5B \
     model.use_liger=True \
     model.fsdp_config.model_dtype=bf16 \
     trainer.default_local_dir=$save_path \
