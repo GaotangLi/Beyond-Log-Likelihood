@@ -55,6 +55,71 @@ LLAMA_PROMPT = '<|begin_of_text|><|begin_of_text|><|start_header_id|>system<|end
 QWEN_PROMPT = '<|im_start|>system\nYou are an expert at decoding Figlet Font ASCII art. When given Figlet Font text, identify the word it represents and output only that without any explanations or additional text.<|im_end|>\n<|im_start|>user\n{prompt}\n<|im_end|>\n<|im_start|>assistant\n'
 
 
+
+
+def jaro_winkler_similarity(s1, s2, normalize=True, prefix_weight=0.1):
+    """
+    Jaro-Winkler similarity - particularly good for short strings.
+    """
+    if normalize:
+        s1, s2 = s1.lower().strip(), s2.lower().strip()
+    
+    if s1 == s2:
+        return 1.0
+    
+    len1, len2 = len(s1), len(s2)
+    if len1 == 0 or len2 == 0:
+        return 0.0
+    
+    match_distance = max(len1, len2) // 2 - 1
+    if match_distance < 0:
+        match_distance = 0
+    
+    s1_matches = [False] * len1
+    s2_matches = [False] * len2
+    
+    matches = 0
+    transpositions = 0
+    
+    for i in range(len1):
+        start = max(0, i - match_distance)
+        end = min(i + match_distance + 1, len2)
+        
+        for j in range(start, end):
+            if s2_matches[j] or s1[i] != s2[j]:
+                continue
+            s1_matches[i] = s2_matches[j] = True
+            matches += 1
+            break
+    
+    if matches == 0:
+        return 0.0
+    
+    k = 0
+    for i in range(len1):
+        if not s1_matches[i]:
+            continue
+        while not s2_matches[k]:
+            k += 1
+        if s1[i] != s2[k]:
+            transpositions += 1
+        k += 1
+    
+    jaro = (matches/len1 + matches/len2 + (matches - transpositions/2)/matches) / 3
+    
+    prefix_len = 0
+    for i in range(min(len1, len2)):
+        if s1[i] == s2[i]:
+            prefix_len += 1
+        else:
+            break
+    prefix_len = min(4, prefix_len)
+    
+    jw_similarity = jaro + prefix_len * prefix_weight * (1 - jaro)
+    
+    return jw_similarity
+
+
 def main():
 
     args = get_args()
@@ -88,6 +153,7 @@ def main():
     curr_score = 0
     curr_normalized_score = 0
     total_count = 0
+    curr_jaro_winkler_similarity = 0 
 
     for i in range(len(input_data)): 
         curr_data = input_data.iloc[i]
@@ -98,15 +164,18 @@ def main():
             "answer": answer,
             "output": output,
             "score": output == answer,
+            "jaro_winkler_similarity": jaro_winkler_similarity(output, answer),
             "normalized_score": output.lower() == answer.lower()
         }
         curr_normalized_score += curr_item['normalized_score']
         total_count += 1
         curr_score += curr_item['score']
+        curr_jaro_winkler_similarity += curr_item['jaro_winkler_similarity']
         output_data.append(curr_item)
 
     print(f"Total score: {curr_score / total_count}")
     print(f"Total normalized score: {curr_normalized_score / total_count}")
+    print(f"Total jaro_winkler_similarity: {curr_jaro_winkler_similarity / total_count}")
     print(f"Total count: {total_count}, total length: {len(input_data)}, total score: {curr_score}")
 
     if args.debug:
@@ -126,11 +195,12 @@ def main():
  
     score_json['average_score'] = curr_score / total_count
     score_json['average_normalized_score'] = curr_normalized_score / total_count
+    score_json['average_jaro_winkler_similarity'] = curr_jaro_winkler_similarity / total_count
     json.dump(score_json, open(output_path.parent / f"{args.output_file_name}_score.json", 'w'), indent=4)
 
     print(f"Average score: {score_json['average_score']:.4f}")
     print(f"Average normalized score: {score_json['average_normalized_score']:.4f}")
-
+    print(f"Average jaro_winkler_similarity: {score_json['average_jaro_winkler_similarity']:.4f}")
 
 if __name__ == "__main__":
     main()
