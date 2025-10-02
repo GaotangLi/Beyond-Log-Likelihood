@@ -396,6 +396,18 @@ class FSDPSFTTrainer:
 
                         loss = 1 - prob_coefficients
                         loss = loss * loss_mask.to(loss.device) 
+                    elif "OnlyTopLogP" in self.config.trainer.objective_trans:
+                        top_th = float(self.config.trainer.objective_trans.split("-")[1])
+                        assert top_th >= 0 and top_th < 1, "top_th must be between 0 and 1" 
+                        loss_mask = loss_mask * (prob_coefficients >= top_th)
+                        loss = loss_fct(shift_logits, shift_labels) # Original implementation 
+                        loss = loss * loss_mask.to(loss.device)
+                    elif "OnlyBottomLogP" in self.config.trainer.objective_trans:
+                        bottom_th = float(self.config.trainer.objective_trans.split("-")[1])
+                        assert bottom_th > 0 and bottom_th <= 1, "bottom_th must be between 0 and 1" 
+                        loss_mask = loss_mask * (prob_coefficients <= bottom_th)
+                        loss = loss_fct(shift_logits, shift_labels) # Original implementation 
+                        loss = loss * loss_mask.to(loss.device)
                     else:
                         raise ValueError(f"Unknown objective transformation: {self.config.trainer.objective_trans}")
             else:

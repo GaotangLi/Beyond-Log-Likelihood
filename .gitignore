@@ -12,6 +12,9 @@ data/medical/
 data/math/
 evaluations/figfont/data/
 results/
+scripts/one_click/math/
+scripts/one_click/medical/
+scripts/one_click/figfont/
 
 # C extensions
 *.so
