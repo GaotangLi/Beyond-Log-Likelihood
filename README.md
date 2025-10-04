@@ -196,12 +196,10 @@ The implementation of this repository is built upon [veRL](https://github.com/vo
 If you find this repository useful, please cite:
 
 ```bibtex
-@misc{li2025beyond,
-  title        = {Beyond Log Likelihood: Probability-Based Objectives for Supervised Fine-Tuning across the Model Capability Continuum},
-  author       = {Li, Gaotang and Qiu, Ruizhong and Chen, Xiusi and Ji, Heng and Tong, Hanghang},
-  year         = {2025},
-  eprint       = {2510.00526},
-  archivePrefix = {arXiv},
-  doi          = {10.48550/arXiv.2510.00526}
+@article{li2025beyond,
+  title={Beyond Log Likelihood: Probability-Based Objectives for Supervised Fine-Tuning across the Model Capability Continuum},
+  author={Li, Gaotang and Qiu, Ruizhong and Chen, Xiusi and Ji, Heng and Tong, Hanghang},
+  journal={arXiv preprint arXiv:2510.00526},
+  year={2025}
 }
 ```
