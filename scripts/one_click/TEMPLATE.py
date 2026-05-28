@@ -3,6 +3,7 @@ MODEL_MAPPING = {
     "qwen-2.5-math-7b": "Qwen/Qwen2.5-Math-7B",
     "qwen-2.5-1.5b": "Qwen/Qwen2.5-1.5B",
     "qwen-2.5-7b": "Qwen/Qwen2.5-7B",
+    "qwen2.5-coder-7b": "Qwen/Qwen2.5-Coder-7B",
     "llama-3.1-8b": "meta-llama/Llama-3.1-8B",
     "llama-3.2-3b": "meta-llama/Llama-3.2-3B",
     "deepseek-math-7b": "deepseek-ai/deepseek-math-7b-base",
@@ -71,7 +72,29 @@ HYPERPARAMETER_MAPPING = {
             "prompt_dict_key": "llama_prompt",
             "response_dict_key": "answer"
         },
-    }
+    },
+    "low_resource_language": {
+        "qwen-2.5-7b": {
+            "lr": "5e-5",
+            "prompt_dict_key": "qwen_prompt",
+            "response_dict_key": "answer",
+            "checkpoint_step": "372",
+        },
+        "llama-3.1-8b": {
+            "lr": "5e-5",
+            "prompt_dict_key": "llama_prompt",
+            "response_dict_key": "answer",
+            "checkpoint_step": "372",
+        },
+    },
+    "coder": {
+        "qwen2.5-coder-7b": {
+            "lr": "5e-5",
+            "prompt_dict_key": "qwen_prompt",
+            "response_dict_key": "answer",
+            "checkpoint_step": "293",
+        },
+    },
 }
 
 
@@ -242,3 +265,96 @@ OUTPUT_DIR="./results/figfont/{model_save_name}/$experiment_name"
 
 export CUDA_VISIBLE_DEVICES={cuda_visible_devices}
 python evaluations/figfont/main.py --model_name ${{MODEL_NAME_OR_PATH}} --output_file_name ${{experiment_name}} --model_save_name {model_save_name} --tensor_parallel_size {nproc_per_node}"""
+
+
+LOW_RESOURCE_LANGUAGE_SCRIPT = r"""nproc_per_node={nproc_per_node}
+project_name=low-resource-language
+lr={lr}
+bz=256
+max_length=1024
+micro_batch_size=16
+weight_decay=1e-4
+
+experiment_name={model_save_name}-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-weight_decay-$weight_decay-micro_batch_size-$micro_batch_size-{trainer_objective_trans}
+save_path=./checkpoints/low_resource_language/$experiment_name
+
+CUDA_VISIBLE_DEVICES={cuda_visible_devices} torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
+        -m main_verl.trainer.fsdp_sft_trainer \
+    data.train_files=./data/low_resource_language/train.parquet \
+    data.val_files=./data/low_resource_language/val.parquet \
+    data.prompt_key=extra_info \
+    data.response_key=extra_info \
+    data.train_batch_size=$bz \
+    data.max_length=$max_length \
+    optim.lr=$lr \
+    optim.weight_decay=$weight_decay \
+    data.prompt_dict_keys=['{prompt_dict_key}'] \
+    data.response_dict_keys=['{response_dict_key}'] \
+    data.use_original_prompt=True \
+    data.micro_batch_size_per_gpu=$micro_batch_size \
+    model.partial_pretrain={base_model_official_path} \
+    model.use_liger=True \
+    model.fsdp_config.model_dtype=bf16 \
+    trainer.default_local_dir=$save_path \
+    trainer.project_name=$project_name \
+    trainer.experiment_name="$experiment_name-$(date +%Y%m%d-%H%M%S)" \
+    trainer.logger=['console','wandb'] \
+    trainer.default_hdfs_dir=null \
+    trainer.test_freq=100000 \
+    trainer.save_freq=10000 \
+    trainer.total_epochs=1 \
+    ulysses_sequence_parallel_size=1 \
+    use_remove_padding=true \
+    trainer.objective_trans={trainer_objective_trans}
+
+
+MODEL_NAME_OR_PATH="$save_path/global_step_{checkpoint_step}"
+OUTPUT_DIR="./results/low_resource_language/{model_save_name}/$experiment_name"
+
+export CUDA_VISIBLE_DEVICES={cuda_visible_devices}
+python evaluations/low_resource_language/main.py --model_name ${{MODEL_NAME_OR_PATH}} --output_file_name ${{experiment_name}} --model_save_name {model_save_name} --tensor_parallel_size {nproc_per_node} --max_tokens 1024"""
+
+
+CODER_SCRIPT = r"""nproc_per_node={nproc_per_node}
+project_name=coder-sft
+lr={lr}
+bz=256
+max_length=3096
+micro_batch_size=4
+
+experiment_name={model_save_name}-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-micro_batch_size-$micro_batch_size-{trainer_objective_trans}
+save_path=./checkpoints/coder/$experiment_name
+
+CUDA_VISIBLE_DEVICES={cuda_visible_devices} torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
+        -m main_verl.trainer.fsdp_sft_trainer \
+    data.train_files=./data/coder/train.parquet \
+    data.val_files=./data/coder/val.parquet \
+    data.prompt_key=extra_info \
+    data.response_key=extra_info \
+    data.train_batch_size=$bz \
+    data.max_length=$max_length \
+    optim.lr=$lr \
+    data.prompt_dict_keys=['{prompt_dict_key}'] \
+    data.response_dict_keys=['{response_dict_key}'] \
+    data.use_original_prompt=True \
+    data.micro_batch_size_per_gpu=$micro_batch_size \
+    model.partial_pretrain={base_model_official_path} \
+    model.use_liger=True \
+    model.fsdp_config.model_dtype=bf16 \
+    trainer.default_local_dir=$save_path \
+    trainer.project_name=$project_name \
+    trainer.experiment_name="$experiment_name-$(date +%Y%m%d-%H%M%S)" \
+    trainer.logger=['console','wandb'] \
+    trainer.default_hdfs_dir=null \
+    trainer.test_freq=100000 \
+    trainer.save_freq=400 \
+    trainer.total_epochs=1 \
+    ulysses_sequence_parallel_size=1 \
+    use_remove_padding=true \
+    trainer.objective_trans={trainer_objective_trans}
+
+
+MODEL_NAME_OR_PATH="$save_path/global_step_{checkpoint_step}"
+
+export CUDA_VISIBLE_DEVICES={cuda_visible_devices}
+python evaluations/coder/main.py --model ${{MODEL_NAME_OR_PATH}} --tp {nproc_per_node}"""

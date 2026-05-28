@@ -1,4 +1,4 @@
-from TEMPLATE import MATH_SCRIPT, MODEL_MAPPING, HYPERPARAMETER_MAPPING, MEDICAL_SCRIPT, FIGFONT_SCRIPT
+from TEMPLATE import CODER_SCRIPT, FIGFONT_SCRIPT, HYPERPARAMETER_MAPPING, LOW_RESOURCE_LANGUAGE_SCRIPT, MATH_SCRIPT, MEDICAL_SCRIPT, MODEL_MAPPING
 import argparse 
 from pathlib import Path 
 import subprocess
@@ -7,6 +7,8 @@ selection = {
     "math": MATH_SCRIPT,
     "medical": MEDICAL_SCRIPT,
     "figfont": FIGFONT_SCRIPT,
+    "low_resource_language": LOW_RESOURCE_LANGUAGE_SCRIPT,
+    "coder": CODER_SCRIPT,
 }
 
 
@@ -19,7 +21,10 @@ def generate_script(args):
     nproc_per_node = args.nproc_per_node 
     script = selection[dataset] 
 
-    hyperparameter_mapping = HYPERPARAMETER_MAPPING[dataset][model_save_name] 
+    if model_save_name not in HYPERPARAMETER_MAPPING[dataset]:
+        valid_models = ", ".join(HYPERPARAMETER_MAPPING[dataset].keys())
+        raise ValueError(f"Model {model_save_name} is not configured for dataset {dataset}. Valid options: {valid_models}")
+    hyperparameter_mapping = HYPERPARAMETER_MAPPING[dataset][model_save_name]
 
 
     if dataset == "math":
@@ -54,6 +59,30 @@ def generate_script(args):
             prompt_dict_key=hyperparameter_mapping["prompt_dict_key"],
             response_dict_key=hyperparameter_mapping["response_dict_key"],
         )
+    elif dataset == "low_resource_language":
+        script = script.format(
+            nproc_per_node=nproc_per_node,
+            model_save_name=model_save_name,
+            base_model_official_path=base_model_official_path,
+            cuda_visible_devices=cuda_visible_devices,
+            trainer_objective_trans=trainer_objective_trans,
+            lr=hyperparameter_mapping["lr"],
+            prompt_dict_key=hyperparameter_mapping["prompt_dict_key"],
+            response_dict_key=hyperparameter_mapping["response_dict_key"],
+            checkpoint_step=hyperparameter_mapping["checkpoint_step"],
+        )
+    elif dataset == "coder":
+        script = script.format(
+            nproc_per_node=nproc_per_node,
+            model_save_name=model_save_name,
+            base_model_official_path=base_model_official_path,
+            cuda_visible_devices=cuda_visible_devices,
+            trainer_objective_trans=trainer_objective_trans,
+            lr=hyperparameter_mapping["lr"],
+            prompt_dict_key=hyperparameter_mapping["prompt_dict_key"],
+            response_dict_key=hyperparameter_mapping["response_dict_key"],
+            checkpoint_step=hyperparameter_mapping["checkpoint_step"],
+        )
     else: 
         raise ValueError(f"Dataset {dataset} not supported.")
     
@@ -63,13 +92,13 @@ def generate_script(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, required=True, choices=["math", "medical", "figfont"])
+    parser.add_argument("--dataset", type=str, required=True, choices=["math", "medical", "figfont", "low_resource_language", "coder"])
     parser.add_argument("--nproc_per_node", type=int, default=2, help="Number of GPUs to use for training.") 
     parser.add_argument(
         "--model_save_name", 
         type=str, 
         required=True, 
-        choices=["qwen-2.5-math-1.5b", "qwen-2.5-math-7b", "qwen-2.5-1.5b", "qwen-2.5-7b", "llama-3.1-8b", "llama-3.2-3b", "deepseek-math-7b"],
+        choices=["qwen-2.5-math-1.5b", "qwen-2.5-math-7b", "qwen-2.5-1.5b", "qwen-2.5-7b", "qwen2.5-coder-7b", "llama-3.1-8b", "llama-3.2-3b", "deepseek-math-7b"],
         help="The model to be used for training."
         "If you want to use a model that is not in the list, you can specify the base model path in the script."
         "Remember to also update the MODEL_MAPPING in TEMPLATE.py."     

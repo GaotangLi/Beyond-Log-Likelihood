@@ -10,11 +10,16 @@ checkpoints/
 data/figfont/
 data/medical/
 data/math/
+data/low_resource_language/
+data/coder/
 evaluations/figfont/data/
+evaluations/low_resource_language/
 results/
 scripts/one_click/math/
 scripts/one_click/medical/
 scripts/one_click/figfont/
+scripts/one_click/low_resource_language/
+scripts/one_click/coder/
 
 # C extensions
 *.so

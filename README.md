@@ -1,7 +1,7 @@
 # Beyond Log Likelihood: Probability-Based Objectives for Supervised Fine-Tuning across the Model Capability Continuum
 
 
-[**🤗 Huggingfacel**](https://huggingface.co/collections/gaotang/beyond-log-likelihood-68ddd78e78cb1e2f6b885a4e) | [**📖 Paper**](https://arxiv.org/abs/2510.00526) 
+[**🤗 Hugging Face**](https://huggingface.co/collections/gaotang/beyond-log-likelihood-68ddd78e78cb1e2f6b885a4e) | [**📖 Paper**](https://arxiv.org/abs/2510.00526) 
 
 ---
 
@@ -49,7 +49,9 @@ Beyond-Log-Likelihood/
 │
 ├── evaluations/              # Evaluation pipelines for different tasks
 │   ├── figfont/
+│   ├── coder/
 │   ├── math/
+│   ├── low_resource_language/
 │   └── medical/
 │
 ├── main_verl/                # Core training framework
@@ -107,9 +109,9 @@ python scripts/one_click/script_generator.py \
 
 #### Arguments
 
-- **`--dataset`**: Specifies the dataset to use. Choose from: `[math, medical, figfont]`
+- **`--dataset`**: Specifies the dataset to use. Choose from: `[math, medical, figfont, low_resource_language, coder]`
 
-- **`--model_save_name`**: Specifies the model key from the mapping below:
+- **`--model_save_name`**: Specifies the model key from the mapping below (you can add more at your will):
 
 ```python
 MODEL_MAPPING = {
@@ -117,17 +119,19 @@ MODEL_MAPPING = {
     "qwen-2.5-math-7b": "Qwen/Qwen2.5-Math-7B",
     "qwen-2.5-1.5b": "Qwen/Qwen2.5-1.5B",
     "qwen-2.5-7b": "Qwen/Qwen2.5-7B",
+    "qwen2.5-coder-7b": "Qwen/Qwen2.5-Coder-7B",
     "llama-3.1-8b": "meta-llama/Llama-3.1-8B",
     "llama-3.2-3b": "meta-llama/Llama-3.2-3B",
     "deepseek-math-7b": "deepseek-ai/deepseek-math-7b-base",
 }
 ```
 
-- **`--trainer_objective_trans`**: The most important argument. Specifies the training objective from the following options (more to be added):
+- **`--trainer_objective_trans`**: The most important argument. Specifies the training objective from the following options (feel free to add more):
 
 | Key | Description |
 |-----|-------------|
 | `original` | Original implementation of SFT |
+| `logp` | $-\log(p)$ |
 | `GeneralFamily-alpha` | The function $(1-p^{\alpha})/\alpha$ where $\alpha$ needs to be specified. A greater positive $\alpha$ means the objective is more prior-leaning; and vice versa for prior-averse |
 | `p` | $1-p$ |
 | `OnlyTopP-q` | The thresholded function $(1-p) \cdot \mathbb{1}[p \geq q]$ ($q$ to be specified) |
@@ -164,6 +168,20 @@ python scripts/one_click/script_generator.py \
     --model_save_name qwen-2.5-7b \
     --trainer_objective_trans original \
     --run_script
+
+# Low-resource language dataset with Qwen2.5-7B using original SFT
+python scripts/one_click/script_generator.py \
+    --dataset low_resource_language \
+    --model_save_name qwen-2.5-7b \
+    --trainer_objective_trans original \
+    --run_script
+
+# Coder dataset with Qwen2.5-Coder-7B using p objective
+python scripts/one_click/script_generator.py \
+    --dataset coder \
+    --model_save_name qwen2.5-coder-7b \
+    --trainer_objective_trans p \
+    --run_script
 ```
 
 
@@ -178,7 +196,7 @@ The evaluation scripts are provided in [`scripts/evaluation/`](scripts/evaluatio
 
 ## 📑 Datasets
 
-Dataset processing and downloading code are in [`data/`](data/). You may generate custom splits using similar preprocessing stages. Feel free to add new datasets via pull request following the logic in [`scripts/script_generator.py`](scripts/generator.py). Our paper uses the following datasets for training: [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [m23k](https://huggingface.co/datasets/UCSC-VLAA/m23k-tokenized), and [reasoning-gym](https://github.com/open-thought/reasoning-gym). We are extremely grateful for these open-source contributions.
+Dataset processing and downloading code are in [`data/`](data/). You may generate custom splits using similar preprocessing stages. Feel free to add new datasets via pull request following the logic in [`scripts/one_click/script_generator.py`](scripts/one_click/script_generator.py). Our paper uses the following datasets for training: [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [m23k](https://huggingface.co/datasets/UCSC-VLAA/m23k-tokenized), and [reasoning-gym](https://github.com/open-thought/reasoning-gym). The low-resource language extension uses [MURI-IT](https://huggingface.co/datasets/akoksal/muri-it-language-split) for SFT data and an MMLU-ProX-style multilingual multiple-choice test set for evaluation. The coder extension uses [Magicoder-OSS-Instruct-75K](https://huggingface.co/datasets/ise-uiuc/Magicoder-OSS-Instruct-75K) for SFT data and EvalPlus for HumanEval/MBPP evaluation. We are extremely grateful for these open-source contributions.
 
 
 
@@ -196,12 +214,10 @@ The implementation of this repository is built upon [veRL](https://github.com/vo
 If you find this repository useful, please cite:
 
 ```bibtex
-@misc{li2025beyond,
-  title        = {Beyond Log Likelihood: Probability-Based Objectives for Supervised Fine-Tuning across the Model Capability Continuum},
-  author       = {Li, Gaotang and Qiu, Ruizhong and Chen, Xiusi and Ji, Heng and Tong, Hanghang},
-  year         = {2025},
-  eprint       = {2510.00526},
-  archivePrefix = {arXiv},
-  doi          = {10.48550/arXiv.2510.00526}
+@article{li2025beyond,
+  title={Beyond log likelihood: Probability-based objectives for supervised fine-tuning across the model capability continuum},
+  author={Li, Gaotang and Qiu, Ruizhong and Chen, Xiusi and Ji, Heng and Tong, Hanghang},
+  journal={arXiv preprint arXiv:2510.00526},
+  year={2025}
 }
 ```
