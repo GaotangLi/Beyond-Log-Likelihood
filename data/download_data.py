@@ -15,6 +15,19 @@ CODER_DATA_FILES = {
     "train": "data/train.parquet",
     "validation": "data/validation.parquet",
 }
+INSTRUCTION_TUNING_REPO = os.environ.get("BLL_INSTRUCTION_TUNING_REPO", "gaotang/mix_magpie_evol_instruct_140k")
+INSTRUCTION_TUNING_DATA_FILES = {
+    "train": "data/train.parquet",
+    "validation": "data/validation.parquet",
+}
+KNOWLEDGE_MEMORIZATION_REPO = os.environ.get("BLL_KNOWLEDGE_MEMORIZATION_REPO", "gaotang/knowledge_memorization_openbookqa")
+KNOWLEDGE_MEMORIZATION_DATA_FILES = {
+    "train_clean": "data/train_clean.parquet",
+    "validation_clean": "data/validation_clean.parquet",
+    "train_noisy": "data/train_noisy_0.3.parquet",
+    "validation_noisy": "data/validation_noisy_0.3.parquet",
+    "test": "data/test_data.json",
+}
 
 ds = load_dataset("gaotang/numina-cot-subset-67k", split="train")
 math_path = Path("./data/math") 
@@ -92,3 +105,79 @@ ds = load_dataset(
     split="validation",
 )
 ds.to_parquet(coder_path / "val.parquet")
+
+instruction_tuning_path = Path("./data/instruction_tuning")
+instruction_tuning_path.mkdir(parents=True, exist_ok=True)
+ds = load_dataset(
+    INSTRUCTION_TUNING_REPO,
+    data_files=INSTRUCTION_TUNING_DATA_FILES,
+    split="train",
+)
+ds.to_parquet(instruction_tuning_path / "train.parquet")
+
+ds = load_dataset(
+    INSTRUCTION_TUNING_REPO,
+    data_files=INSTRUCTION_TUNING_DATA_FILES,
+    split="validation",
+)
+ds.to_parquet(instruction_tuning_path / "val.parquet")
+
+knowledge_memorization_path = Path("./data/knowledge_memorization")
+knowledge_memorization_path.mkdir(parents=True, exist_ok=True)
+knowledge_memorization_eval_path = Path("./evaluations/knowledge_memorization/data")
+knowledge_memorization_eval_path.mkdir(parents=True, exist_ok=True)
+
+ds = load_dataset(
+    KNOWLEDGE_MEMORIZATION_REPO,
+    data_files={
+        "train_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_clean"],
+        "validation_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_clean"],
+        "train_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_noisy"],
+        "validation_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_noisy"],
+    },
+    split="train_clean",
+)
+ds.to_parquet(knowledge_memorization_path / "train_clean.parquet")
+
+ds = load_dataset(
+    KNOWLEDGE_MEMORIZATION_REPO,
+    data_files={
+        "train_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_clean"],
+        "validation_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_clean"],
+        "train_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_noisy"],
+        "validation_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_noisy"],
+    },
+    split="validation_clean",
+)
+ds.to_parquet(knowledge_memorization_path / "val_clean.parquet")
+
+ds = load_dataset(
+    KNOWLEDGE_MEMORIZATION_REPO,
+    data_files={
+        "train_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_clean"],
+        "validation_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_clean"],
+        "train_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_noisy"],
+        "validation_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_noisy"],
+    },
+    split="train_noisy",
+)
+ds.to_parquet(knowledge_memorization_path / "train_noisy_0.3.parquet")
+
+ds = load_dataset(
+    KNOWLEDGE_MEMORIZATION_REPO,
+    data_files={
+        "train_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_clean"],
+        "validation_clean": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_clean"],
+        "train_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["train_noisy"],
+        "validation_noisy": KNOWLEDGE_MEMORIZATION_DATA_FILES["validation_noisy"],
+    },
+    split="validation_noisy",
+)
+ds.to_parquet(knowledge_memorization_path / "val_noisy_0.3.parquet")
+
+ds = load_dataset(
+    KNOWLEDGE_MEMORIZATION_REPO,
+    data_files={"test": KNOWLEDGE_MEMORIZATION_DATA_FILES["test"]},
+    split="test",
+)
+ds.to_json(knowledge_memorization_eval_path / "test_data.json", orient="records", lines=False)

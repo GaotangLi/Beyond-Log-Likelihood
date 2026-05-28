@@ -1,4 +1,4 @@
-from TEMPLATE import CODER_SCRIPT, FIGFONT_SCRIPT, HYPERPARAMETER_MAPPING, LOW_RESOURCE_LANGUAGE_SCRIPT, MATH_SCRIPT, MEDICAL_SCRIPT, MODEL_MAPPING
+from TEMPLATE import CODER_SCRIPT, FIGFONT_SCRIPT, HYPERPARAMETER_MAPPING, INSTRUCTION_TUNING_SCRIPT, LOW_RESOURCE_LANGUAGE_SCRIPT, MATH_SCRIPT, MEDICAL_SCRIPT, MODEL_MAPPING
 import argparse 
 from pathlib import Path 
 import subprocess
@@ -9,6 +9,7 @@ selection = {
     "figfont": FIGFONT_SCRIPT,
     "low_resource_language": LOW_RESOURCE_LANGUAGE_SCRIPT,
     "coder": CODER_SCRIPT,
+    "instruction_tuning": INSTRUCTION_TUNING_SCRIPT,
 }
 
 
@@ -16,15 +17,18 @@ def generate_script(args):
     dataset = args.dataset 
     model_save_name = args.model_save_name 
     base_model_official_path = MODEL_MAPPING[model_save_name]
-    cuda_visible_devices = args.cuda_visible_devices 
     trainer_objective_trans = args.trainer_objective_trans 
-    nproc_per_node = args.nproc_per_node 
     script = selection[dataset] 
+
+    if trainer_objective_trans == "logp":
+        raise ValueError("Use trainer_objective_trans=original for the NLL/original SFT objective.")
 
     if model_save_name not in HYPERPARAMETER_MAPPING[dataset]:
         valid_models = ", ".join(HYPERPARAMETER_MAPPING[dataset].keys())
         raise ValueError(f"Model {model_save_name} is not configured for dataset {dataset}. Valid options: {valid_models}")
     hyperparameter_mapping = HYPERPARAMETER_MAPPING[dataset][model_save_name]
+    nproc_per_node = args.nproc_per_node or int(hyperparameter_mapping.get("nproc_per_node", 2))
+    cuda_visible_devices = args.cuda_visible_devices or ",".join(str(i) for i in range(nproc_per_node))
 
 
     if dataset == "math":
@@ -83,6 +87,20 @@ def generate_script(args):
             response_dict_key=hyperparameter_mapping["response_dict_key"],
             checkpoint_step=hyperparameter_mapping["checkpoint_step"],
         )
+    elif dataset == "instruction_tuning":
+        script = script.format(
+            nproc_per_node=nproc_per_node,
+            model_save_name=model_save_name,
+            base_model_official_path=base_model_official_path,
+            cuda_visible_devices=cuda_visible_devices,
+            trainer_objective_trans=trainer_objective_trans,
+            lr=hyperparameter_mapping["lr"],
+            batch_size=hyperparameter_mapping["batch_size"],
+            micro_batch_size=hyperparameter_mapping["micro_batch_size"],
+            prompt_dict_key=hyperparameter_mapping["prompt_dict_key"],
+            response_dict_key=hyperparameter_mapping["response_dict_key"],
+            checkpoint_step=hyperparameter_mapping["checkpoint_step"],
+        )
     else: 
         raise ValueError(f"Dataset {dataset} not supported.")
     
@@ -92,13 +110,13 @@ def generate_script(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, required=True, choices=["math", "medical", "figfont", "low_resource_language", "coder"])
-    parser.add_argument("--nproc_per_node", type=int, default=2, help="Number of GPUs to use for training.") 
+    parser.add_argument("--dataset", type=str, required=True, choices=["math", "medical", "figfont", "low_resource_language", "coder", "instruction_tuning"])
+    parser.add_argument("--nproc_per_node", type=int, default=None, help="Number of GPUs to use for training. Defaults to the dataset/model preset.") 
     parser.add_argument(
         "--model_save_name", 
         type=str, 
         required=True, 
-        choices=["qwen-2.5-math-1.5b", "qwen-2.5-math-7b", "qwen-2.5-1.5b", "qwen-2.5-7b", "qwen2.5-coder-7b", "llama-3.1-8b", "llama-3.2-3b", "deepseek-math-7b"],
+        choices=["qwen-2.5-math-1.5b", "qwen-2.5-math-7b", "qwen-2.5-1.5b", "qwen-2.5-7b", "qwen2.5-3b", "qwen2.5-7b", "qwen2.5-14b", "qwen2.5-coder-7b", "llama-3.1-8b", "llama-3.2-3b", "deepseek-math-7b"],
         help="The model to be used for training."
         "If you want to use a model that is not in the list, you can specify the base model path in the script."
         "Remember to also update the MODEL_MAPPING in TEMPLATE.py."     
@@ -122,7 +140,7 @@ if __name__ == "__main__":
         "-log(p) * 1[p <= q]: OnlyBottomLogP-q (q to be specified)"
     )
 
-    parser.add_argument("--cuda_visible_devices", type=str, default="0,1") 
+    parser.add_argument("--cuda_visible_devices", type=str, default=None) 
     parser.add_argument("--run_script", action="store_true", default=False)
     args = parser.parse_args()
 

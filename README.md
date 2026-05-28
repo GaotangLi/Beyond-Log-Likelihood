@@ -10,6 +10,7 @@
 - [📂 Repository Structure](#-repository-structure)  
 - [⚙️ Installation](#️-installation)  
 - [🚀 Training](#-training)  
+- [🔬 Ablation Scripts](#-ablation-scripts)  
 - [📊 Evaluation](#-evaluation)  
 - [📑 Datasets](#-datasets)  
 - [🙏 Acknowledgements](#-acknowledgements)  
@@ -45,11 +46,13 @@ Beyond-Log-Likelihood/
 │   ├── data_process_figfont.py
 │   ├── data_process_math.py
 │   ├── data_process_medical.py
+│   ├── data_process_instruction_tuning.py
 │   └── download_data.py
 │
 ├── evaluations/              # Evaluation pipelines for different tasks
 │   ├── figfont/
 │   ├── coder/
+│   ├── instruction_tuning/
 │   ├── math/
 │   ├── low_resource_language/
 │   └── medical/
@@ -62,8 +65,9 @@ Beyond-Log-Likelihood/
 │
 ├── scripts/                  # Scripts for running experiments
 │   ├── evaluation/
-│   └── training/
-│   └── one_click/  # train and eva in one click with your passed-in parameters
+│   ├── training/
+│   ├── one_click/             # train and evaluate in one step
+│   └── ablation/              # paper ablation sweeps
 │
 ├── .gitignore
 └── README.md
@@ -109,7 +113,7 @@ python scripts/one_click/script_generator.py \
 
 #### Arguments
 
-- **`--dataset`**: Specifies the dataset to use. Choose from: `[math, medical, figfont, low_resource_language, coder]`
+- **`--dataset`**: Specifies the dataset to use. Choose from: `[math, medical, figfont, low_resource_language, coder, instruction_tuning]`
 
 - **`--model_save_name`**: Specifies the model key from the mapping below (you can add more at your will):
 
@@ -119,6 +123,9 @@ MODEL_MAPPING = {
     "qwen-2.5-math-7b": "Qwen/Qwen2.5-Math-7B",
     "qwen-2.5-1.5b": "Qwen/Qwen2.5-1.5B",
     "qwen-2.5-7b": "Qwen/Qwen2.5-7B",
+    "qwen2.5-3b": "Qwen/Qwen2.5-3B",
+    "qwen2.5-7b": "Qwen/Qwen2.5-7B",
+    "qwen2.5-14b": "Qwen/Qwen2.5-14B",
     "qwen2.5-coder-7b": "Qwen/Qwen2.5-Coder-7B",
     "llama-3.1-8b": "meta-llama/Llama-3.1-8B",
     "llama-3.2-3b": "meta-llama/Llama-3.2-3B",
@@ -130,8 +137,7 @@ MODEL_MAPPING = {
 
 | Key | Description |
 |-----|-------------|
-| `original` | Original implementation of SFT |
-| `logp` | $-\log(p)$ |
+| `original` | Original SFT / NLL implementation |
 | `GeneralFamily-alpha` | The function $(1-p^{\alpha})/\alpha$ where $\alpha$ needs to be specified. A greater positive $\alpha$ means the objective is more prior-leaning; and vice versa for prior-averse |
 | `p` | $1-p$ |
 | `OnlyTopP-q` | The thresholded function $(1-p) \cdot \mathbb{1}[p \geq q]$ ($q$ to be specified) |
@@ -182,6 +188,34 @@ python scripts/one_click/script_generator.py \
     --model_save_name qwen2.5-coder-7b \
     --trainer_objective_trans p \
     --run_script
+
+# Instruction-tuning dataset with Qwen2.5-7B using original SFT / NLL
+python scripts/one_click/script_generator.py \
+    --dataset instruction_tuning \
+    --model_save_name qwen2.5-7b \
+    --trainer_objective_trans original \
+    --run_script
+
+# Instruction-tuning dataset with Qwen2.5-14B uses the 4-GPU preset by default.
+python scripts/one_click/script_generator.py \
+    --dataset instruction_tuning \
+    --model_save_name qwen2.5-14b \
+    --trainer_objective_trans p \
+    --run_script
+```
+
+### 🔬 Ablation Scripts
+
+Paper ablation sweeps are organized in [`scripts/ablation/`](scripts/ablation/). These scripts train and evaluate in one command, using the same repo-local data layout as the main training scripts.
+
+- [`convexity/`](scripts/ablation/convexity/) contains the Figfont and Math convexity sweeps.
+- [`model_scale/`](scripts/ablation/model_scale/) contains the Qwen2.5 scale sweep for `original` and `p`.
+- [`figure5/`](scripts/ablation/figure5/) contains the top/bottom percentile threshold sweeps for `p`, `-log(p)`, and `log(1-p)`.
+
+The model-scale NLL baseline is named `original` in this repo. To regenerate the ablation shell scripts after changing sweep definitions:
+
+```bash
+python scripts/ablation/generate_ablation_scripts.py
 ```
 
 
@@ -196,7 +230,7 @@ The evaluation scripts are provided in [`scripts/evaluation/`](scripts/evaluatio
 
 ## 📑 Datasets
 
-Dataset processing and downloading code are in [`data/`](data/). You may generate custom splits using similar preprocessing stages. Feel free to add new datasets via pull request following the logic in [`scripts/one_click/script_generator.py`](scripts/one_click/script_generator.py). Our paper uses the following datasets for training: [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [m23k](https://huggingface.co/datasets/UCSC-VLAA/m23k-tokenized), and [reasoning-gym](https://github.com/open-thought/reasoning-gym). The low-resource language extension uses [MURI-IT](https://huggingface.co/datasets/akoksal/muri-it-language-split) for SFT data and an MMLU-ProX-style multilingual multiple-choice test set for evaluation. The coder extension uses [Magicoder-OSS-Instruct-75K](https://huggingface.co/datasets/ise-uiuc/Magicoder-OSS-Instruct-75K) for SFT data and EvalPlus for HumanEval/MBPP evaluation. We are extremely grateful for these open-source contributions.
+Dataset processing and downloading code are in [`data/`](data/). You may generate custom splits using similar preprocessing stages. Feel free to add new datasets via pull request following the logic in [`scripts/one_click/script_generator.py`](scripts/one_click/script_generator.py). Our paper uses the following datasets for training: [NuminaMath-CoT](https://huggingface.co/datasets/AI-MO/NuminaMath-CoT), [m23k](https://huggingface.co/datasets/UCSC-VLAA/m23k-tokenized), and [reasoning-gym](https://github.com/open-thought/reasoning-gym). The low-resource language extension uses [MURI-IT](https://huggingface.co/datasets/akoksal/muri-it-language-split) for SFT data and an MMLU-ProX-style multilingual multiple-choice test set for evaluation. The coder extension uses [Magicoder-OSS-Instruct-75K](https://huggingface.co/datasets/ise-uiuc/Magicoder-OSS-Instruct-75K) for SFT data and EvalPlus for HumanEval/MBPP evaluation. The instruction-tuning extension uses a 140K mix of [Magpie-Pro-300K-Filtered](https://huggingface.co/datasets/Magpie-Align/Magpie-Pro-300K-Filtered) and [WizardLM_evol_instruct_70k](https://huggingface.co/datasets/WizardLMTeam/WizardLM_evol_instruct_70k), evaluated with AlpacaEval. We are extremely grateful for these open-source contributions.
 
 
 

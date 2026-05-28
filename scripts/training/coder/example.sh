@@ -5,7 +5,7 @@ bz=256
 max_length=3096
 micro_batch_size=4
 
-experiment_name=qwen2.5-coder-7b-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-micro_batch_size-$micro_batch_size-logp
+experiment_name=qwen2.5-coder-7b-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-micro_batch_size-$micro_batch_size-original
 save_path=./checkpoints/coder/$experiment_name
 
 torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
@@ -34,4 +34,4 @@ torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
     trainer.total_epochs=1 \
     ulysses_sequence_parallel_size=1 \
     use_remove_padding=true \
-    trainer.objective_trans=logp
+    trainer.objective_trans=original

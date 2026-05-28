@@ -12,14 +12,18 @@ data/medical/
 data/math/
 data/low_resource_language/
 data/coder/
+data/instruction_tuning/
+data/knowledge_memorization/
 evaluations/figfont/data/
-evaluations/low_resource_language/
+evaluations/low_resource_language/data/
+evaluations/knowledge_memorization/data/
 results/
 scripts/one_click/math/
 scripts/one_click/medical/
 scripts/one_click/figfont/
 scripts/one_click/low_resource_language/
 scripts/one_click/coder/
+scripts/one_click/instruction_tuning/
 
 # C extensions
 *.so

@@ -6,7 +6,7 @@ max_length=1024
 micro_batch_size=16
 weight_decay=1e-4
 
-experiment_name=qwen-2.5-7b-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-weight_decay-$weight_decay-micro_batch_size-$micro_batch_size-logp
+experiment_name=qwen-2.5-7b-lr-$lr-bz-$bz-max_length-$max_length-nproc_per_node-$nproc_per_node-weight_decay-$weight_decay-micro_batch_size-$micro_batch_size-original
 save_path=./checkpoints/low_resource_language/$experiment_name
 
 torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
@@ -36,4 +36,4 @@ torchrun --standalone --nnodes=1 --nproc_per_node=$nproc_per_node \
     trainer.total_epochs=1 \
     ulysses_sequence_parallel_size=1 \
     use_remove_padding=true \
-    trainer.objective_trans=logp
+    trainer.objective_trans=original
